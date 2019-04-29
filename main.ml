@@ -17,4 +17,4 @@ let _ =
     in
     let prog = parse source in
     let result = execute 1024 prog in
-    Printf.printf "Result: %d" result
+    Printf.printf "Result: %d\n" result

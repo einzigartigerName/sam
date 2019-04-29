@@ -2,16 +2,17 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
 
 (* -------------------- Types -------------------- *)
     type label = string * int
-
     type mem = int
-
     type reg = int
+    type const = int
 
     type call = 
         (* Move *)
         | MOVRR of reg * reg
         | MOVRM of reg * mem
         | MOVMR of mem * reg
+        | MOVRC of reg * const
+        | MOVMC of mem * const
         (* Add *)
         | ADDRR of reg * reg
         | ADDRM of reg * mem
@@ -61,12 +62,15 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
 (* -------------------- Utils -------------------- *)
     (* type for type-parsing *)
     type arg_type =
+        | CONST of const
         | REG of reg
         | MEM of mem
 
     (* "Const" *)
     let label_regex = Str.regexp "^[a-z_][a-z0-9_]+:$"
-
+    let mem_regex = Str.regexp "\[[0-9]+\]"
+    let first = Str.regexp "\["
+    let last = Str.regexp "\]"
     (* Error in parsing *)
     let error line_num line = Printf.printf "ERROR in line %d: %s\n" line_num line
 
@@ -74,8 +78,13 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
     (* parse argument into register/memory-address *)
     let parse_arg v =
         try
-            MEM (int_of_string v)
+            CONST (int_of_string v)
         with e -> 
+            if Str.string_match mem_regex v 0 then
+                CONST (int_of_string (
+                        Str.global_replace last "" (
+                            Str.global_replace first "" v)))
+            else
             match v with
             | "a" -> REG 0
             | "b" -> REG 1
@@ -144,7 +153,7 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                         | "jl"::a::[] -> impl ((JL (slwl a labels))::acc) (count + 1)
                         | "jz"::a::[] -> impl ((JZ (slwl a labels))::acc) (count + 1)
                         (* Halt *)
-                        | "hlt"::[] -> impl (HALT::acc) (count +1)
+                        | "halt"::[] -> impl (HALT::acc) (count +1)
                         (* empty line *)
                         | ""::[] -> impl (NUL::acc) (count + 1)
                         (* Compare *)
@@ -195,6 +204,8 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                                 | REG x, REG y -> impl ((MOVRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((MOVRM (x, y))::acc) (count + 1)
                                 | MEM x, REG y -> impl ((MOVMR (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((MOVRC (x, y))::acc) (count + 1)
+                                | MEM x, CONST y -> impl ((MOVMC (x, y))::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         | _ -> error (count + 1) line; exit 0
             with End_of_file ->
@@ -219,13 +230,15 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
             | _ -> Printf.printf "ERROR: unknown state from comparison\n"; exit 0
         in
         let register = Array.make 6 0 in
-        let memory = Array.init mem (fun x -> x) in
+        let memory = Array.make mem 0 in
         let stack = Stack.create () in
         let rec impl pc =
             match prog.(pc) with
                 | MOVRR (a, b) -> register.(a) <- register.(b); impl (pc + 1)
                 | MOVRM (a, b) -> register.(a) <- memory.(b); impl (pc + 1)
                 | MOVMR (a, b) -> memory.(a) <- register.(b); impl (pc + 1)
+                | MOVRC (a, b) -> register.(a) <- b; impl (pc + 1)
+                | MOVMC (a, b) -> memory.(a) <- b; impl (pc + 1)
                 | ADDRR (a, b) -> register.(a) <- register.(a) + register.(b); impl (pc + 1)
                 | ADDRM (a, b) -> register.(a) <- register.(a) + memory.(b); impl (pc + 1)
                 | SUBRR (a, b) -> register.(a) <- register.(a) - register.(b); impl (pc + 1)
