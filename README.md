@@ -13,6 +13,8 @@ add [register]  [register/memory]
 sub [register]  [register/memory]
 mul [register]  [register/memory]
 div [register]  [register/memory]
+cmp [register]  [register/memory]
+jmp [label/line]
 halt
 ```
 
