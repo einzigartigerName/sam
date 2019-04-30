@@ -7,14 +7,18 @@ There are six register (a to f), 1024 memory cells and a 'unlimited' stack.
 The calls are case-insensitive.
 
 ``` ASM
-mov [register]  [memory/const/register]
-mov [memory]    [const/register]
-add [register]  [register/memory]
-sub [register]  [register/memory]
-mul [register]  [register/memory]
-div [register]  [register/memory]
-cmp [register]  [register/memory]
-jmp [label/line]
+mov 	[register]  [register/memory/const]
+mov 	[memory]    [const/register]
+add 	[register]  [register/memory/const]
+sub 	[register]  [register/memory/const]
+mul 	[register]  [register/memory/const]
+div 	[register]  [register/memory/const]
+and	    [register]  [register/memory/const]
+or      [register]  [register/memory/const]
+cmp 	[register]  [register/memory/const]
+jmp 	[label/line]
+push 	[register]
+pop 	[register]
 halt
 ```
 

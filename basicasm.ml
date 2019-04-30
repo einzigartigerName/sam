@@ -7,13 +7,13 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
     type const = int
 
     type call = 
-        (* Move *)
+        (* move *)
         | MOVRR of reg * reg
         | MOVRM of reg * mem
         | MOVMR of mem * reg
         | MOVRC of reg * const
         | MOVMC of mem * const
-        (* Add *)
+        (* add *)
         | ADDRR of reg * reg
         | ADDRM of reg * mem
         | ADDRC of reg * const
@@ -37,33 +37,33 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
         | ORRR of reg * reg
         | ORRM of reg * mem
         | ORRC of reg * const
-        (* NOT *)
+        (* not *)
         | NOTR of reg
-        (* Compare *)
+        (* compare *)
         | CMPRR of reg * reg
         | CMPRM of reg * mem
         | CMPRC of reg * const
-        (* JUMP *)
+        (* jump *)
         | JMP of int
-        (* JUMP Zero *)
+        (* jump zero *)
         | JZ of int
-        (* JUMP Greater or Equal *)
+        (* jump greater or equal *)
         | JGE of int
-        (* JUMP Greater *)
+        (* jump greater *)
         | JG of int
-        (* JUMP Less or Equal *)
+        (* jump less or equal *)
         | JLE of int
-        (* JUMP Less *)
+        (* jump less *)
         | JL of int
-        (* PUSH *)
+        (* push *)
         | PUSH of reg
-        (* POP *)
+        (* pop *)
         | POP of reg    
-        (* LABEL *)
+        (* label *)
         | LABEL of int
-        (* NUL *)
+        (* nul *)
         | NUL
-        (* HALT *)
+        (* halt *)
         | HALT
 
 (* -------------------- Utils -------------------- *)
