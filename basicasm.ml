@@ -16,26 +16,33 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
         (* Add *)
         | ADDRR of reg * reg
         | ADDRM of reg * mem
+        | ADDRC of reg * const
         (* sub *)
         | SUBRR of reg * reg
         | SUBRM of reg * mem
+        | SUBRC of reg * const
         (* mul *)
         | MULRR of reg * reg
         | MULRM of reg * mem
+        | MULRC of reg * const
         (* div *)
         | DIVRR of reg * reg
         | DIVRM of reg * mem
+        | DIVRC of reg * const
         (* and *)
         | ANDRR of reg * reg
         | ANDRM of reg * mem
+        | ANDRC of reg * const
         (* or *)
         | ORRR of reg * reg
         | ORRM of reg * mem
+        | ORRC of reg * const
         (* NOT *)
         | NOTR of reg
         (* Compare *)
         | CMPRR of reg * reg
         | CMPRM of reg * mem
+        | CMPRC of reg * const
         (* JUMP *)
         | JMP of int
         (* JUMP Zero *)
@@ -145,6 +152,18 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                 then impl (LABEL count :: acc) (count + 1)
                 (* Parse line *)
                 else match split with
+                        (* PUSH *)
+                        | "push"::a::[] ->
+                            let arg_a = parse_arg a in
+                            (match arg_a with
+                                | REG x -> impl ((PUSH x)::acc) (count + 1)
+                                | _ -> error (count + 1) line; exit 0)
+                        (* POP *)
+                        | "pop"::a::[] ->
+                            let arg_a = parse_arg a in
+                            (match arg_a with
+                                | REG x -> impl ((POP x)::acc) (count + 1)
+                                | _ -> error (count + 1) line; exit 0)
                         (* Jumps *)
                         | "jmp"::a::[] -> impl ((JMP (slwl a labels))::acc) (count + 1)
                         | "jge"::a::[] -> impl ((JGE (slwl a labels))::acc) (count + 1)
@@ -163,6 +182,31 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                             (match arg_a, arg_b with
                                 | REG x, REG y -> impl ((CMPRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((CMPRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((CMPRC (x, y))::acc) (count + 1)
+                                | _ -> error (count + 1) line; exit 0)
+                        (* AND *)
+                        | "and"::a::b::[] ->
+                            let arg_a = parse_arg a in
+                            let arg_b = parse_arg b in
+                            (match arg_a, arg_b with
+                                | REG x, REG y -> impl ((ANDRR (x, y))::acc) (count + 1)
+                                | REG x, MEM y -> impl ((ANDRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((ANDRC (x, y))::acc) (count + 1)
+                                | _ -> error (count + 1) line; exit 0)
+                        (* OR *)
+                        | "or"::a::b::[] ->
+                            let arg_a = parse_arg a in
+                            let arg_b = parse_arg b in
+                            (match arg_a, arg_b with
+                                | REG x, REG y -> impl ((ORRR (x, y))::acc) (count + 1)
+                                | REG x, MEM y -> impl ((ORRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((ORRC (x, y))::acc) (count + 1)
+                                | _ -> error (count + 1) line; exit 0)
+                        (* NOT *)
+                        | "not"::a::[] ->
+                            let arg_a = parse_arg a in
+                            (match arg_a with
+                                | REG x -> impl ((NOTR x)::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         (* ADD *)
                         | "add"::a::b::[] ->
@@ -171,6 +215,7 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                             (match arg_a, arg_b with
                                 | REG x, REG y -> impl ((ADDRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((ADDRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((ADDRC (x, y))::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         (* SUB *)
                         | "sub"::a::b::[] ->
@@ -179,6 +224,7 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                             (match arg_a, arg_b with
                                 | REG x, REG y -> impl ((SUBRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((SUBRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((SUBRC (x, y))::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         (* MUL *)
                         | "mul"::a::b::[] ->
@@ -187,6 +233,7 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                             (match arg_a, arg_b with
                                 | REG x, REG y -> impl ((MULRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((MULRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((MULRC (x, y))::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         (* DIV *)
                         | "div"::a::b::[] ->
@@ -195,6 +242,7 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
                             (match arg_a, arg_b with
                                 | REG x, REG y -> impl ((DIVRR (x, y))::acc) (count + 1)
                                 | REG x, MEM y -> impl ((DIVRM (x, y))::acc) (count + 1)
+                                | REG x, CONST y -> impl ((DIVRC (x, y))::acc) (count + 1)
                                 | _ -> error (count + 1) line; exit 0)
                         (* MOV *)
                         | "mov"::a::b::[] ->
@@ -233,36 +281,64 @@ module BasicAsm : Asm.Asm with type mem = int and type reg = int = struct
         let memory = Array.make mem 0 in
         let stack = Stack.create () in
         let rec impl pc =
-            match prog.(pc) with
+            if pc >= Array.length prog then
+                register.(0)
+            else match prog.(pc) with
+                (* MOVE *)
                 | MOVRR (a, b) -> register.(a) <- register.(b); impl (pc + 1)
                 | MOVRM (a, b) -> register.(a) <- memory.(b); impl (pc + 1)
                 | MOVMR (a, b) -> memory.(a) <- register.(b); impl (pc + 1)
                 | MOVRC (a, b) -> register.(a) <- b; impl (pc + 1)
                 | MOVMC (a, b) -> memory.(a) <- b; impl (pc + 1)
+                (* ADD *)
                 | ADDRR (a, b) -> register.(a) <- register.(a) + register.(b); impl (pc + 1)
                 | ADDRM (a, b) -> register.(a) <- register.(a) + memory.(b); impl (pc + 1)
+                | ADDRC (a, b) -> register.(a) <- register.(a) + b; impl (pc + 1)
+                (* SUB *)
                 | SUBRR (a, b) -> register.(a) <- register.(a) - register.(b); impl (pc + 1)
                 | SUBRM (a, b) -> register.(a) <- register.(a) - memory.(b); impl (pc + 1)
+                | SUBRC (a, b) -> register.(a) <- register.(a) - b; impl (pc + 1)
+                (* MUL *)
                 | MULRR (a, b) -> register.(a) <- register.(a) * register.(b); impl (pc + 1)
                 | MULRM (a, b) -> register.(a) <- register.(a) * memory.(b); impl (pc + 1)
+                | MULRC (a, b) -> register.(a) <- register.(a) * b; impl (pc + 1)
+                (* DIV *)
                 | DIVRR (a, b) -> register.(a) <- register.(a) / register.(b); impl (pc + 1)
                 | DIVRM (a, b) -> register.(a) <- register.(a) / memory.(b); impl (pc + 1)
+                | DIVRC (a, b) -> register.(a) <- register.(a) / b; impl (pc + 1)
+                (* CMP *)
                 | CMPRR (a, b) ->
                     let cmp = compare register.(a) register.(b) in
                     set_flags cmp; impl (pc + 1)
                 | CMPRM (a, b) ->
                     let cmp = compare register.(a) memory.(b) in
                     set_flags cmp; impl (pc + 1)
+                (* AND *)
+                | ANDRR (a, b) -> register.(a) <- register.(a) land register.(b); impl (pc + 1)
+                | ANDRM (a, b) -> register.(a) <- register.(a) land memory.(b); impl (pc + 1)
+                | ANDRC (a, b) -> register.(a) <- register.(a) land b; impl (pc + 1)
+                (* OR *)
+                | ORRR (a, b) -> register.(a) <- register.(a) lor register.(b); impl (pc + 1)
+                | ORRM (a, b) -> register.(a) <- register.(a) lor memory.(b); impl (pc + 1)
+                | ORRC (a, b) -> register.(a) <- register.(a) lor b; impl (pc + 1)
+                (* NOT *)
+                | NOTR a -> register.(a) <- lnot register.(a); impl (pc + 1)
+                (* JUMP *)
                 | JMP i -> impl (i - 1)
                 | JGE i -> if flags.(0) || flags.(1) then impl (i + 1) else impl (pc + 1)
                 | JG i -> if flags.(1) then impl (i + 1) else impl (pc + 1)
                 | JLE i -> if flags.(2) || flags.(1) then impl (i + 1) else impl (pc + 1)
                 | JL i -> if flags.(2) then impl (i + 1) else impl (pc + 1)
                 | JZ i -> if flags.(1) then impl (i + 1) else impl (pc + 1)
+                (* LABEL / NUL *)
                 | LABEL _ | NUL -> impl (pc + 1)
+                (* PUSH *)
                 | PUSH r -> Stack.push register.(r) stack; impl (pc + 1)
+                (* POP *)
                 | POP r -> register.(r) <- Stack.pop stack; impl (pc + 1)
+                (* HALT *)
                 | HALT -> register.(0)
+                (* ERROR *)
                 | _ -> Printf.printf "ERROR in line %d" pc; exit 0
         in
         impl 0
